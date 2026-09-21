@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: var(--font-serif-luxury), "Cormorant Garamond", Georgia, Cambria, serif;
+  --font-sans: var(--font-sans), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  --color-obsidian: #080706;
+  --color-charcoal: #12100E;
+  --color-onyx: #1A1715;
+  --color-espresso: #241D19;
+  --color-stone-muted: #2E2824;
+  --color-brass: #D4AF37;
+  --color-brass-light: #E8C86A;
+  --color-brass-dark: #A88623;
+  --color-crema: #F4EDE4;
+  --color-crema-muted: #D9CDBD;
+  --color-ash: #9E938A;
+}
+
+:root {
+  --background: #080706;
+  --foreground: #F4EDE4;
+}
+
+body {
+  background: #080706;
+  color: #F4EDE4;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Luxury Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080706;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2E2824;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+/* Subtle Film Grain */
+.bg-grain {
+  background-image: radial-gradient(rgba(212, 175, 55, 0.035) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Atmospheric Lighting Blooms */
+.ambient-bloom {
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.1) 0%, rgba(168, 134, 35, 0.04) 40%, transparent 70%);
+}
+
+.ambient-cup-glow {
+  background: radial-gradient(circle at center, rgba(232, 200, 106, 0.15) 0%, rgba(212, 175, 55, 0.06) 45%, transparent 70%);
+}
+
+/* 3D Hardware Accelerated Perspective & Transforms */
+.perspective-container {
+  perspective: 1200px;
+  perspective-origin: center center;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(18, 16, 14, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.12);
+}
+
+.glass-pill {
+  background: rgba(8, 7, 6, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
