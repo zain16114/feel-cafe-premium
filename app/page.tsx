@@ -9,20 +9,19 @@ import GallerySection from "@/components/gallery/GallerySection";
 import LocationSection from "@/components/location/LocationSection";
 import Footer from "@/components/layout/Footer";
 import ReservationModal from "@/components/reservation/ReservationModal";
+import CursorBloom from "@/components/ui/CursorBloom";
 
 export default function Home() {
   const [reservationOpen, setReservationOpen] = useState(false);
 
-  const handleOpenReservation = () => {
-    setReservationOpen(true);
-  };
-
-  const handleCloseReservation = () => {
-    setReservationOpen(false);
-  };
+  const handleOpenReservation = () => setReservationOpen(true);
+  const handleCloseReservation = () => setReservationOpen(false);
 
   return (
     <main className="min-h-screen bg-[#080706] text-[#F4EDE4] selection:bg-[#D4AF37]/30 selection:text-[#FFF]">
+      {/* Global ambient cursor bloom */}
+      <CursorBloom />
+
       {/* Floating Glass Navigation */}
       <Navbar onOpenReservation={handleOpenReservation} />
 

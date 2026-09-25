@@ -1,98 +1,109 @@
 "use client";
 
-import React from "react";
-import { motion, HTMLMotionProps } from "motion/react";
+import React, { useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 
-export interface ButtonProps extends HTMLMotionProps<"button"> {
-  variant?: "primary" | "secondary" | "outline" | "ghost";
-  size?: "sm" | "md" | "lg";
+interface ButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
   href?: string;
+  variant?: "primary" | "secondary";
+  size?: "sm" | "md" | "lg";
+  icon?: React.ReactNode;
+  className?: string;
   target?: string;
   rel?: string;
-  icon?: React.ReactNode;
-  iconPosition?: "left" | "right";
-  children: React.ReactNode;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      variant = "primary",
-      size = "md",
-      href,
-      target,
-      rel,
-      icon,
-      iconPosition = "right",
-      className = "",
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const sizeClasses = {
-      sm: "px-4 py-2 text-xs tracking-[0.16em]",
-      md: "px-6 py-3 text-xs sm:text-sm tracking-[0.18em]",
-      lg: "px-8 py-4 text-sm sm:text-base tracking-[0.2em]",
-    };
+export function Button({
+  children,
+  onClick,
+  href,
+  variant = "primary",
+  size = "md",
+  icon,
+  className = "",
+  target,
+  rel,
+  type = "button",
+  disabled,
+}: ButtonProps) {
+  const btnRef = useRef<HTMLButtonElement & HTMLAnchorElement>(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const magnetX = useSpring(useTransform(mouseX, [-1, 1], [-6, 6]), {
+    stiffness: 300,
+    damping: 20,
+  });
+  const magnetY = useSpring(useTransform(mouseY, [-1, 1], [-4, 4]), {
+    stiffness: 300,
+    damping: 20,
+  });
 
-    const variantClasses = {
-      primary:
-        "bg-gradient-to-b from-[#E8C86A] via-[#D4AF37] to-[#A88623] text-[#080706] font-semibold shadow-lg shadow-[#D4AF37]/15 hover:shadow-[#D4AF37]/30 hover:brightness-110 border border-[#E8C86A]/40",
-      secondary:
-        "bg-[#1A1715]/80 hover:bg-[#26201B] text-[#F4EDE4] border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 shadow-md backdrop-blur-md",
-      outline:
-        "bg-transparent hover:bg-[#D4AF37]/10 text-[#F4EDE4] border border-[#F4EDE4]/20 hover:border-[#D4AF37]/50",
-      ghost:
-        "bg-transparent hover:bg-white/[0.04] text-[#D9CDBD] hover:text-[#F4EDE4]",
-    };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    mouseX.set(((e.clientX - rect.left) / rect.width) * 2 - 1);
+    mouseY.set(((e.clientY - rect.top) / rect.height) * 2 - 1);
+  };
 
-    const baseClasses =
-      "relative inline-flex items-center justify-center uppercase font-sans font-medium rounded-full cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#080706] disabled:opacity-50 disabled:cursor-not-allowed select-none overflow-hidden group";
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
 
-    const content = (
-      <>
-        {icon && iconPosition === "left" && (
-          <span className="mr-2.5 transition-transform duration-300 group-hover:-translate-x-0.5">
-            {icon}
-          </span>
-        )}
-        <span>{children}</span>
-        {icon && iconPosition === "right" && (
-          <span className="ml-2.5 transition-transform duration-300 group-hover:translate-x-0.5">
-            {icon}
-          </span>
-        )}
-      </>
-    );
+  const sizeClasses = {
+    sm: "px-5 py-2 text-[11px]",
+    md: "px-6 py-2.5 text-xs",
+    lg: "px-8 py-3 text-xs sm:text-sm",
+  };
 
-    if (href) {
-      return (
-        <motion.a
-          href={href}
-          target={target}
-          rel={rel}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
-        >
-          {content}
-        </motion.a>
-      );
-    }
+  const baseClass = `relative inline-flex items-center gap-2 font-semibold uppercase tracking-[0.18em] rounded-full transition-all duration-300 overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] ${sizeClasses[size]} ${className}`;
 
+  const variantClass =
+    variant === "primary"
+      ? "bg-gradient-to-r from-[#D4AF37] to-[#E8C86A] text-[#080706] shadow-md hover:shadow-lg hover:shadow-[#D4AF37]/25 active:scale-[0.97]"
+      : "bg-transparent border border-[#D4AF37]/40 text-[#E8C86A] hover:border-[#D4AF37]/80 hover:bg-[#D4AF37]/[0.06] active:scale-[0.97]";
+
+  const content = (
+    <>
+      {children}
+      {icon && <span className="ml-0.5">{icon}</span>}
+    </>
+  );
+
+  if (href) {
     return (
-      <motion.button
-        ref={ref}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
-        {...props}
+      <motion.a
+        href={href}
+        target={target}
+        rel={rel}
+        className={`${baseClass} ${variantClass}`}
+        style={{ x: magnetX, y: magnetY }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        whileTap={{ scale: 0.96 }}
       >
         {content}
-      </motion.button>
+      </motion.a>
     );
   }
-);
 
-Button.displayName = "Button";
+  return (
+    <motion.button
+      ref={btnRef}
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClass} ${variantClass}`}
+      style={{ x: magnetX, y: magnetY }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      whileTap={{ scale: 0.96 }}
+    >
+      {content}
+    </motion.button>
+  );
+}

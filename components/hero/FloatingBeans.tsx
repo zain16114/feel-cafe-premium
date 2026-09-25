@@ -1,232 +1,85 @@
 "use client";
-
 import React from "react";
-import { motion, MotionValue, useTransform } from "motion/react";
+import { motion, MotionValue, useTransform, useSpring } from "motion/react";
 
-interface FloatingBeansProps {
+interface Props {
   mouseX: MotionValue<number>;
   mouseY: MotionValue<number>;
 }
 
-interface BeanConfig {
-  id: string;
-  x: number;
-  y: number;
-  z: number;
-  scale: number;
-  rotation: number;
-  blur: string;
-  parallaxFactor: number;
-  floatDuration: number;
-  floatYRange: number;
-}
-
-const beansData: BeanConfig[] = [
-  // Background layer (depth of field blur, slow response)
-  {
-    id: "bean-bg-1",
-    x: -160,
-    y: -140,
-    z: -70,
-    scale: 0.65,
-    rotation: -42,
-    blur: "blur-[1.5px]",
-    parallaxFactor: 0.03,
-    floatDuration: 7.2,
-    floatYRange: 14,
-  },
-  {
-    id: "bean-bg-2",
-    x: 180,
-    y: 130,
-    z: -50,
-    scale: 0.7,
-    rotation: 55,
-    blur: "blur-[1.2px]",
-    parallaxFactor: 0.04,
-    floatDuration: 8.0,
-    floatYRange: 16,
-  },
-
-  // Midground layer (crisp focus, aligned near cup)
-  {
-    id: "bean-mid-1",
-    x: -180,
-    y: 50,
-    z: 25,
-    scale: 0.95,
-    rotation: 28,
-    blur: "blur-0",
-    parallaxFactor: 0.07,
-    floatDuration: 5.8,
-    floatYRange: 18,
-  },
-  {
-    id: "bean-mid-2",
-    x: 165,
-    y: -70,
-    z: 35,
-    scale: 1.0,
-    rotation: -30,
-    blur: "blur-0",
-    parallaxFactor: 0.08,
-    floatDuration: 6.4,
-    floatYRange: 20,
-  },
-
-  // Foreground layer (larger, higher parallax, slight camera proximity blur)
-  {
-    id: "bean-fg-1",
-    x: -110,
-    y: 160,
-    z: 95,
-    scale: 1.25,
-    rotation: 65,
-    blur: "blur-[0.5px]",
-    parallaxFactor: 0.12,
-    floatDuration: 4.8,
-    floatYRange: 22,
-  },
-  {
-    id: "bean-fg-2",
-    x: 130,
-    y: -155,
-    z: 110,
-    scale: 1.2,
-    rotation: -75,
-    blur: "blur-[0.5px]",
-    parallaxFactor: 0.13,
-    floatDuration: 5.2,
-    floatYRange: 24,
-  },
+const beans = [
+  { id: 0, x: -185, y: -80,  size: 18, rotateZ: 30,  depth: 0.8, rotDir: 1,  dur: 11, orbitR: 0 },
+  { id: 1, x: 170,  y: -60,  size: 14, rotateZ: -45, depth: 0.4, rotDir: -1, dur: 13, orbitR: 0 },
+  { id: 2, x: -150, y: 100,  size: 22, rotateZ: 70,  depth: 1.0, rotDir: 1,  dur: 9,  orbitR: 0 },
+  { id: 3, x: 140,  y: 90,   size: 16, rotateZ: -20, depth: 0.6, rotDir: -1, dur: 15, orbitR: 0 },
+  { id: 4, x: -80,  y: -140, size: 12, rotateZ: 55,  depth: 0.3, rotDir: 1,  dur: 17, orbitR: 0 },
+  { id: 5, x: 80,   y: -130, size: 20, rotateZ: -60, depth: 0.9, rotDir: -1, dur: 12, orbitR: 0 },
+  { id: 6, x: -220, y: 20,   size: 10, rotateZ: 15,  depth: 0.2, rotDir: 1,  dur: 19, orbitR: 0 },
 ];
 
-export default function FloatingBeans({ mouseX, mouseY }: FloatingBeansProps) {
-  return (
-    <div
-      className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible"
-      style={{ transformStyle: "preserve-3d" }}
-    >
-      {beansData.map((bean) => (
-        <SingleBean key={bean.id} config={bean} mouseX={mouseX} mouseY={mouseY} />
-      ))}
-    </div>
-  );
-}
-
-function SingleBean({
-  config,
+function Bean({
+  bean,
   mouseX,
   mouseY,
 }: {
-  config: BeanConfig;
+  bean: (typeof beans)[0];
   mouseX: MotionValue<number>;
   mouseY: MotionValue<number>;
 }) {
-  const pX = useTransform(mouseX, (v) => v * config.parallaxFactor);
-  const pY = useTransform(mouseY, (v) => v * config.parallaxFactor);
+  const px = useTransform(mouseX, [-400, 400], [-25 * bean.depth, 25 * bean.depth]);
+  const py = useTransform(mouseY, [-400, 400], [-18 * bean.depth, 18 * bean.depth]);
+  const spx = useSpring(px, { stiffness: 60 + bean.depth * 40, damping: 18 });
+  const spy = useSpring(py, { stiffness: 60 + bean.depth * 40, damping: 18 });
 
   return (
     <motion.div
+      className="absolute"
       style={{
-        x: pX,
-        y: pY,
-        transform: `translate3d(${config.x}px, ${config.y}px, ${config.z}px) rotate(${config.rotation}deg) scale(${config.scale})`,
-        transformStyle: "preserve-3d",
+        left: "50%",
+        top: "50%",
+        x: bean.x,
+        y: bean.y,
+        translateX: "-50%",
+        translateY: "-50%",
       }}
-      className={`absolute ${config.blur}`}
+      animate={{
+        y: [bean.y, bean.y - 12, bean.y + 8, bean.y],
+        rotateZ: [bean.rotateZ, bean.rotateZ + 40 * bean.rotDir, bean.rotateZ],
+      }}
+      transition={{ duration: bean.dur, repeat: Infinity, ease: "easeInOut" }}
     >
-      <motion.div
-        animate={{
-          y: [-config.floatYRange / 2, config.floatYRange / 2, -config.floatYRange / 2],
-          rotate: [config.rotation, config.rotation + 6, config.rotation - 4, config.rotation],
-        }}
-        transition={{
-          duration: config.floatDuration,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="relative drop-shadow-[0_12px_16px_rgba(0,0,0,0.85)] filter"
-      >
-        {/* Realistic Coffee Bean SVG */}
+      <motion.div style={{ x: spx, y: spy }}>
         <svg
-          width="36"
-          height="48"
-          viewBox="0 0 36 48"
+          width={bean.size}
+          height={bean.size * 1.6}
+          viewBox="0 0 18 28"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <defs>
-            <radialGradient
-              id={`beanGrad-${config.id}`}
-              cx="35%"
-              cy="35%"
-              r="65%"
-              fx="30%"
-              fy="30%"
-            >
-              <stop offset="0%" stopColor="#6E472D" />
-              <stop offset="45%" stopColor="#4A2E1B" />
-              <stop offset="85%" stopColor="#2A170C" />
-              <stop offset="100%" stopColor="#150B05" />
-            </radialGradient>
-            <linearGradient
-              id={`creaseGrad-${config.id}`}
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <stop offset="0%" stopColor="#150B05" stopOpacity="0.9" />
-              <stop offset="50%" stopColor="#0B0502" />
-              <stop offset="100%" stopColor="#150B05" stopOpacity="0.9" />
-            </linearGradient>
-            <linearGradient
-              id={`specularGrad-${config.id}`}
-              x1="0%"
-              y1="0%"
-              x2="0%"
-              y2="100%"
-            >
-              <stop offset="0%" stopColor="#A8754A" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#A8754A" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Bean Body */}
+          <ellipse cx="9" cy="14" rx="8" ry="13" fill="#6B3D1E" />
+          <ellipse cx="9" cy="14" rx="5.5" ry="9" fill="#5A3018" />
+          <path d="M9 4 Q12 14 9 24" stroke="#3D1F0E" strokeWidth="1.2" fill="none" />
           <ellipse
-            cx="18"
-            cy="24"
-            rx="14"
-            ry="20"
-            fill={`url(#beanGrad-${config.id})`}
-            stroke="#150B05"
-            strokeWidth="0.8"
-          />
-
-          {/* Specular curved gloss on upper flank */}
-          <path
-            d="M9,14 C12,8 20,8 24,13 C21,11 14,11 9,14 Z"
-            fill={`url(#specularGrad-${config.id})`}
-          />
-
-          {/* Characteristic S-Curved Furrow / Crease */}
-          <path
-            d="M18,6 C16,14 21,22 17,32 C15,37 17,42 18,43"
-            stroke={`url(#creaseGrad-${config.id})`}
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-          {/* Subtle Crease highlight */}
-          <path
-            d="M19.5,8 C17.5,16 22.5,23 18.5,33"
-            stroke="#6E472D"
-            strokeWidth="0.8"
-            strokeOpacity="0.5"
-            strokeLinecap="round"
+            cx="6"
+            cy="8"
+            rx="2"
+            ry="1.5"
+            fill="#8B5E3C"
+            fillOpacity="0.5"
+            transform="rotate(-20 6 8)"
           />
         </svg>
       </motion.div>
     </motion.div>
+  );
+}
+
+export default function FloatingBeans({ mouseX, mouseY }: Props) {
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      {beans.map((bean) => (
+        <Bean key={bean.id} bean={bean} mouseX={mouseX} mouseY={mouseY} />
+      ))}
+    </div>
   );
 }

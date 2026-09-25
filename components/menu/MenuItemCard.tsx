@@ -1,121 +1,373 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "motion/react";
-import { MenuItem } from "@/data/menu";
-import { Coffee, Utensils, Sparkles } from "lucide-react";
+import React, { useRef } from "react";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "motion/react";
+import type { MenuItem } from "@/data/menu";
+import { getMenuImage } from "@/lib/menuImages";
 
 interface MenuItemCardProps {
   item: MenuItem;
   index: number;
 }
 
-export default function MenuItemCard({ item, index }: MenuItemCardProps) {
-  const [selectedSize, setSelectedSize] = useState<"regular" | "large">(
-    "regular"
+export default function MenuItemCard({
+  item,
+  index,
+}: MenuItemCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const rotateX = useSpring(
+    useTransform(mouseY, [-1, 1], [2.2, -2.2]),
+    {
+      stiffness: 220,
+      damping: 25,
+    }
   );
 
-  const currentPrice =
-    selectedSize === "large" && item.largePrice !== undefined
-      ? item.largePrice
-      : item.price;
+  const rotateY = useSpring(
+    useTransform(mouseX, [-1, 1], [-2.2, 2.2]),
+    {
+      stiffness: 220,
+      damping: 25,
+    }
+  );
 
-  // Determine icon archetype based on category
-  const isCoffee = [
-    "espresso",
-    "cold-coffee",
-    "frappes",
-    "hot-teas",
-    "shakes",
-    "mohitos",
-  ].includes(item.category);
+  const imageSrc = getMenuImage(item);
+
+  const handleMouseMove = (
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    const card = cardRef.current;
+
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+
+    const x =
+      (event.clientX - rect.left) / rect.width;
+
+    const y =
+      (event.clientY - rect.top) / rect.height;
+
+    mouseX.set(x * 2 - 1);
+    mouseY.set(y * 2 - 1);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  const priceLabel =
+    item.hasSizes && item.largePrice
+      ? `PKR ${item.price} / ${item.largePrice}`
+      : `PKR ${item.price}`;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.96 }}
+    <motion.article
+      ref={cardRef}
+      initial={{
+        opacity: 0,
+        y: 18,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
       transition={{
-        duration: 0.45,
-        delay: Math.min(index * 0.04, 0.4),
-        ease: [0.16, 1, 0.3, 1],
+        duration: 0.5,
+        delay: Math.min(index * 0.045, 0.25),
+        ease: [0.16, 1, 0.3, 1] as const,
       }}
-      whileHover={{
-        y: -4,
-        transition: { duration: 0.25 },
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+        perspective: 1000,
       }}
-      className="group relative flex flex-col justify-between rounded-2xl bg-gradient-to-b from-[#13110F] via-[#0E0C0B] to-[#090807] border border-[#241E1A] hover:border-[#D4AF37]/45 p-6 sm:p-7 shadow-lg hover:shadow-2xl hover:shadow-black/70 transition-all duration-300"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="
+        group
+        relative
+        overflow-hidden
+        rounded-2xl
+        border
+        border-[#29221C]
+        bg-[#100D0B]
+        transition-all
+        duration-500
+        hover:border-[#D4AF37]/40
+        hover:shadow-[0_20px_60px_rgba(0,0,0,0.35)]
+      "
     >
-      {/* Ambient brass border sheen */}
-      <div className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-tr from-[#D4AF37]/10 via-transparent to-transparent" />
+      {/* IMAGE */}
 
-      <div className="relative z-10">
-        {/* Top Header: Category badge & Icon */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-[10px] uppercase tracking-[0.24em] font-medium text-[#9E938A] group-hover:text-[#D4AF37] transition-colors">
-            {item.category.replace("-", " ")}
-          </span>
-
-          <div className="w-8 h-8 rounded-full bg-[#181512] border border-[#2B241E] flex items-center justify-center text-[#D4AF37]/60 group-hover:text-[#E8C86A] group-hover:border-[#D4AF37]/40 transition-colors">
-            {isCoffee ? (
-              <Coffee className="w-3.5 h-3.5" />
-            ) : item.category === "desserts" ? (
-              <Sparkles className="w-3.5 h-3.5" />
-            ) : (
-              <Utensils className="w-3.5 h-3.5" />
-            )}
-          </div>
-        </div>
-
-        {/* Item Name */}
-        <h3 className="font-serif text-xl sm:text-2xl font-normal text-[#F4EDE4] leading-snug group-hover:text-white transition-colors">
-          {item.name}
-        </h3>
-      </div>
-
-      {/* Bottom Row: Sizing Toggle & Exact PKR Price */}
-      <div className="relative z-10 mt-6 pt-5 border-t border-[#1C1714] flex items-end justify-between gap-3">
-        {/* Size Selector for drinks with dual sizing */}
-        {item.hasSizes && item.largePrice !== undefined ? (
-          <div className="inline-flex rounded-full bg-[#080706] p-0.5 border border-[#241E1A]">
-            <button
-              onClick={() => setSelectedSize("regular")}
-              className={`px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full transition-all cursor-pointer ${
-                selectedSize === "regular"
-                  ? "bg-[#D4AF37] text-[#080706] font-semibold"
-                  : "text-[#9E938A] hover:text-[#F4EDE4]"
-              }`}
-            >
-              Regular
-            </button>
-            <button
-              onClick={() => setSelectedSize("large")}
-              className={`px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full transition-all cursor-pointer ${
-                selectedSize === "large"
-                  ? "bg-[#D4AF37] text-[#080706] font-semibold"
-                  : "text-[#9E938A] hover:text-[#F4EDE4]"
-              }`}
-            >
-              Large
-            </button>
-          </div>
+      <div className="relative h-40 overflow-hidden bg-[#17120F] sm:h-44">
+        {imageSrc ? (
+          <motion.img
+            src={imageSrc}
+            alt={`${item.name} at Feel Cafe`}
+            loading="lazy"
+            whileHover={{
+              scale: 1.055,
+            }}
+            transition={{
+              duration: 0.65,
+              ease: [0.16, 1, 0.3, 1] as const,
+            }}
+            className="
+              h-full
+              w-full
+              object-cover
+            "
+          />
         ) : (
-          <span className="text-[11px] uppercase tracking-wider text-[#9E938A]/70">
-            Standard Serving
-          </span>
+          <div
+            className="
+              flex
+              h-full
+              w-full
+              items-center
+              justify-center
+              bg-gradient-to-br
+              from-[#211A14]
+              via-[#15110E]
+              to-[#0C0A09]
+            "
+          >
+            <span
+              className="
+                font-serif
+                text-xl
+                italic
+                text-[#D4AF37]/40
+              "
+            >
+              Feel Cafe
+            </span>
+          </div>
         )}
 
-        {/* Price Tag in PKR */}
-        <div className="text-right shrink-0">
-          <span className="text-[10px] uppercase tracking-wider text-[#9E938A] mr-1">
-            PKR
-          </span>
-          <span className="font-serif text-xl sm:text-2xl font-medium text-[#E8C86A] tracking-tight">
-            {currentPrice.toLocaleString("en-PK")}
+        {/* IMAGE GRADIENT */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-gradient-to-t
+            from-[#100D0B]
+            via-transparent
+            to-black/10
+          "
+        />
+
+        {/* PREMIUM LIGHT SWEEP */}
+
+        <motion.div
+          initial={{
+            opacity: 0,
+            x: "-100%",
+          }}
+          whileHover={{
+            opacity: 1,
+            x: "100%",
+          }}
+          transition={{
+            duration: 0.85,
+            ease: "easeInOut",
+          }}
+          className="
+            pointer-events-none
+            absolute
+            inset-y-0
+            w-1/3
+            bg-gradient-to-r
+            from-transparent
+            via-white/10
+            to-transparent
+            blur-xl
+          "
+        />
+
+        {/* FEATURED */}
+
+        {item.featured && (
+          <div className="absolute left-3 top-3">
+            <motion.span
+              initial={{
+                opacity: 0,
+                y: -6,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                delay:
+                  Math.min(index * 0.045, 0.25) +
+                  0.1,
+                duration: 0.35,
+              }}
+              className="
+                inline-flex
+                rounded-full
+                border
+                border-[#D4AF37]/30
+                bg-[#080706]/80
+                px-2.5
+                py-1
+                text-[9px]
+                font-semibold
+                uppercase
+                tracking-[0.16em]
+                text-[#E8C86A]
+                backdrop-blur-md
+              "
+            >
+              Chef's Pick
+            </motion.span>
+          </div>
+        )}
+
+        {/* CATEGORY */}
+
+        <div className="absolute bottom-3 left-3">
+          <span
+            className="
+              inline-flex
+              rounded-full
+              border
+              border-white/10
+              bg-black/45
+              px-2.5
+              py-1
+              text-[9px]
+              font-medium
+              uppercase
+              tracking-[0.14em]
+              text-white/75
+              backdrop-blur-md
+            "
+          >
+            {item.category.replace(/-/g, " ")}
           </span>
         </div>
       </div>
-    </motion.div>
+
+      {/* CONTENT */}
+
+      <div className="relative p-4 sm:p-5">
+        <h4
+          className="
+            min-h-[3rem]
+            font-serif
+            text-lg
+            leading-tight
+            text-[#F4EDE4]
+            transition-colors
+            duration-300
+            group-hover:text-[#E8C86A]
+            sm:text-xl
+          "
+        >
+          {item.name}
+        </h4>
+
+        {/* GOLD DETAIL */}
+
+        <motion.div
+          initial={{
+            width: 22,
+          }}
+          whileHover={{
+            width: 45,
+          }}
+          transition={{
+            duration: 0.3,
+          }}
+          className="
+            my-3
+            h-px
+            bg-[#D4AF37]/50
+          "
+        />
+
+        {/* PRICE */}
+
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p
+              className="
+                mb-0.5
+                text-[9px]
+                uppercase
+                tracking-[0.16em]
+                text-[#9E938A]
+              "
+            >
+              From
+            </p>
+
+            <p
+              className="
+                font-serif
+                text-base
+                text-[#D4AF37]
+                sm:text-lg
+              "
+            >
+              {priceLabel}
+            </p>
+          </div>
+
+          {item.hasSizes && (
+            <span
+              className="
+                pb-0.5
+                text-[8px]
+                uppercase
+                tracking-[0.12em]
+                text-[#9E938A]
+              "
+            >
+              Regular / Large
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* GOLD HOVER BORDER */}
+
+      <motion.div
+        initial={{
+          opacity: 0,
+        }}
+        whileHover={{
+          opacity: 1,
+        }}
+        transition={{
+          duration: 0.25,
+        }}
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          rounded-2xl
+          ring-1
+          ring-inset
+          ring-[#D4AF37]/20
+        "
+      />
+    </motion.article>
   );
 }
