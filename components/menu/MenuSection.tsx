@@ -1,42 +1,21 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { motion, AnimatePresence, type Variants } from "motion/react";
-import { Search, ChevronDown, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Search, Sparkles } from "lucide-react";
+
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import MenuItemCard from "./MenuItemCard";
 import { menuCategories, menuItems } from "@/data/menu";
-
-const ease = [0.16, 1, 0.3, 1] as const;
-
-const containerVariants: Variants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.06,
-    },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 24,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.55,
-      ease,
-    },
-  },
-};
+import { menuCategoryImages } from "@/lib/menuCategoryImages";
 
 export default function MenuSection() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAll, setShowAll] = useState(false);
+
+  const activeCategoryData = menuCategories.find(
+    (category) => category.id === activeCategory
+  );
 
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -46,113 +25,68 @@ export default function MenuSection() {
         activeCategory === "all" || item.category === activeCategory;
 
       const matchesSearch =
-        query === "" ||
-        item.name.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query);
+        !query || item.name.toLowerCase().includes(query);
 
       return matchesCategory && matchesSearch;
     });
   }, [activeCategory, searchQuery]);
 
-  const visibleItems = useMemo(() => {
-    if (searchQuery.trim() || showAll) {
-      return filteredItems;
-    }
-
-    const featured = filteredItems.filter((item) => item.featured);
-    const remaining = filteredItems.filter((item) => !item.featured);
-
-    return [...featured, ...remaining].slice(0, 6);
-  }, [filteredItems, searchQuery, showAll]);
-
-  const hasMoreItems =
-    !searchQuery.trim() && filteredItems.length > visibleItems.length;
-
-  const activeCategoryName =
-    menuCategories.find((category) => category.id === activeCategory)?.name ??
-    "All Selections";
+  const categoryImage =
+    activeCategory === "all"
+      ? menuCategoryImages.espresso
+      : menuCategoryImages[activeCategory];
 
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
-    setShowAll(false);
-  };
+    setSearchQuery("");
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setShowAll(false);
+    setTimeout(() => {
+      document.getElementById("menu-content")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
   };
 
   return (
     <section
       id="menu"
-      className="relative overflow-hidden border-t border-[#1C1814] bg-[#080706] px-6 py-24 sm:px-8 sm:py-32 lg:px-12 lg:py-40"
+      className="relative overflow-hidden bg-[#080706] py-24 sm:py-32"
     >
-      <div className="pointer-events-none absolute -right-40 top-20 h-[500px] w-[500px] rounded-full bg-[#D4AF37]/[0.035] blur-[150px]" />
+      {/* Ambient background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.035] blur-[140px]" />
+        <div className="absolute bottom-0 right-0 h-[450px] w-[450px] rounded-full bg-white/[0.012] blur-[120px]" />
+      </div>
 
-      <div className="pointer-events-none absolute -left-40 bottom-20 h-[500px] w-[500px] rounded-full bg-[#A88623]/[0.025] blur-[150px]" />
-
-      <div className="relative mx-auto max-w-7xl">
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.75, ease }}
-        >
-          <SectionHeader
-            kicker="The Menu"
-            title="Curated for Taste."
-            italicWord="Crafted to Order."
-            description="A considered selection of coffee, food and refreshments prepared with care. Explore a category, discover a favorite, and let the rest wait for your next visit."
-            align="center"
-          />
-        </motion.div>
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+        {/* Heading */}
+        <SectionHeader
+          title="Pure & Simple"
+          description="Thoughtfully prepared coffee, food and refreshments for every moment."
+        />
 
         {/* Search */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.15, ease }}
-          className="mx-auto mt-12 max-w-xl"
-        >
-          <div className="group relative">
-
-            <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9E938A] transition-colors duration-300 group-focus-within:text-[#D4AF37]" />
+        <div className="mx-auto mt-12 max-w-2xl">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
 
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search the menu..."
-              className="w-full rounded-full border border-[#2B231D] bg-[#100D0B]/90 py-4 pl-12 pr-20 text-sm text-[#F4EDE4] outline-none transition-all duration-300 placeholder:text-[#9E938A]/50 focus:border-[#D4AF37]/60 focus:bg-[#14100D] focus:ring-1 focus:ring-[#D4AF37]/20"
+              onChange={(event) =>
+                setSearchQuery(event.target.value)
+              }
+              placeholder="Search our menu..."
+              className="h-14 w-full rounded-full border border-white/[0.09] bg-white/[0.035] pl-12 pr-5 text-sm text-[#F4EDE4] outline-none placeholder:text-white/25 transition-all duration-300 focus:border-[#D4AF37]/40 focus:bg-white/[0.05]"
             />
-
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => handleSearchChange("")}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-[0.16em] text-[#9E938A] transition-colors hover:text-[#E8C86A]"
-              >
-                Clear
-              </button>
-            )}
-
           </div>
-        </motion.div>
+        </div>
 
-        {/* Categories */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.25, ease }}
-          className="relative mt-10"
-        >
-          <div className="no-scrollbar -mx-4 overflow-x-auto px-4 pb-3">
-            <div className="flex min-w-max items-center justify-center gap-2 lg:flex-wrap">
-
+        {/* Category navigation */}
+        <div className="mt-10">
+          <div className="relative">
+            <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-4">
               {menuCategories.map((category) => {
                 const isActive = activeCategory === category.id;
 
@@ -160,222 +94,164 @@ export default function MenuSection() {
                   <button
                     key={category.id}
                     type="button"
-                    onClick={() => handleCategoryChange(category.id)}
-                    className={`relative cursor-pointer overflow-hidden rounded-full border px-4 py-2.5 text-[10px] uppercase tracking-[0.16em] transition-colors duration-300 sm:text-[11px] ${
-                      isActive
-                        ? "border-transparent text-[#080706]"
-                        : "border-[#28211B] bg-[#120F0D]/70 text-[#9E938A] hover:border-[#4A3B2B] hover:text-[#F4EDE4]"
-                    }`}
+                    onClick={() =>
+                      handleCategoryChange(category.id)
+                    }
+                    className="relative shrink-0 rounded-full px-5 py-3 text-[11px] font-medium uppercase tracking-[0.12em]"
                   >
-
                     {isActive && (
                       <motion.div
                         layoutId="menu-active-category"
-                        className="absolute inset-0 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#E8C86A]"
+                        className="absolute inset-0 rounded-full bg-[#D4AF37]"
                         transition={{
                           type: "spring",
-                          stiffness: 380,
-                          damping: 30,
+                          stiffness: 420,
+                          damping: 32,
                         }}
                       />
                     )}
 
-                    <span className="relative z-10">
-                      {category.shortName}
-
-                      <span
-                        className={`ml-1.5 ${
-                          isActive
-                            ? "text-[#080706]/60"
-                            : "text-[#D4AF37]/60"
-                        }`}
-                      >
-                        {category.count}
-                      </span>
+                    <span
+                      className={`relative z-10 transition-colors ${
+                        isActive
+                          ? "text-[#080706]"
+                          : "text-white/40 hover:text-white/80"
+                      }`}
+                    >
+                      {category.shortName || category.name}
                     </span>
-
                   </button>
                 );
               })}
-
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Category Heading */}
-        <motion.div
-          layout
-          className="mt-10 flex flex-col gap-4 border-b border-[#211B17] pb-5 sm:flex-row sm:items-end sm:justify-between"
+        {/* Selected category */}
+        <div
+          id="menu-content"
+          className="scroll-mt-24 mt-8"
         >
-
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-
-              <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
-
-              <span className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37]">
-                {activeCategory === "all"
-                  ? "Our selections"
-                  : "Selected category"}
-              </span>
-
-            </div>
-
-            <h3 className="font-serif text-2xl font-normal text-[#F4EDE4] sm:text-3xl">
-              {activeCategoryName}
-            </h3>
-          </div>
-
-          <div className="text-xs text-[#9E938A]">
-
-            {searchQuery ? (
-              <>
-                <span className="text-[#E8C86A]">
-                  {filteredItems.length}
-                </span>{" "}
-                result{filteredItems.length === 1 ? "" : "s"}
-              </>
-            ) : (
-              <>
-                <span className="text-[#E8C86A]">
-                  {filteredItems.length}
-                </span>{" "}
-                selections
-              </>
-            )}
-
-          </div>
-
-        </motion.div>
-
-        {/* Menu Items */}
-        <AnimatePresence mode="wait">
-
-          <motion.div
-            key={`${activeCategory}-${searchQuery}-${showAll}`}
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="mt-7 grid grid-cols-1 gap-5 md:grid-cols-2"
-          >
-
-            {visibleItems.map((item, index) => (
-              <motion.div key={item.id} variants={itemVariants}>
-                <MenuItemCard
-                  item={item}
-                  index={index}
-                />
-              </motion.div>
-            ))}
-
-          </motion.div>
-
-        </AnimatePresence>
-
-        {/* Empty State */}
-        {filteredItems.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto mt-10 max-w-xl rounded-3xl border border-dashed border-[#2B231D] px-6 py-16 text-center"
-          >
-
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#3A2F25] bg-[#120F0D]">
-              <Search className="h-4 w-4 text-[#D4AF37]" />
-            </div>
-
-            <h4 className="mt-5 font-serif text-xl text-[#F4EDE4]">
-              Nothing found
-            </h4>
-
-            <p className="mt-2 text-sm leading-6 text-[#9E938A]">
-              We could not find a menu item matching &ldquo;
-              {searchQuery}
-              &rdquo;.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveCategory("all");
-                setSearchQuery("");
-                setShowAll(false);
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeCategory}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{
+                duration: 0.45,
+                ease: [0.22, 1, 0.36, 1],
               }}
-              className="mt-6 rounded-full border border-[#D4AF37]/30 bg-[#17120E] px-5 py-2.5 text-[10px] uppercase tracking-[0.18em] text-[#E8C86A] transition-colors hover:border-[#D4AF37] hover:bg-[#211A13]"
             >
-              Reset Menu
-            </button>
+              {/* Category hero */}
+              <div className="group relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#12100E]">
+                <div className="relative h-[280px] sm:h-[360px] lg:h-[420px]">
+                  {categoryImage && (
+                    <img
+                      src={categoryImage}
+                      alt={
+                        activeCategory === "all"
+                          ? "Feel Cafe menu"
+                          : `${activeCategoryData?.name || "Menu"}`
+                      }
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1.8s] ease-out group-hover:scale-[1.035]"
+                    />
+                  )}
 
-          </motion.div>
-        )}
+                  {/* Cinematic overlay */}
+                  <div className="absolute inset-0 bg-black/20" />
 
-        {/* View Full Menu */}
-        {hasMoreItems && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.5, ease }}
-            className="mt-10 flex justify-center"
-          >
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#080706] via-[#080706]/35 to-transparent" />
 
-            <button
-              type="button"
-              onClick={() => setShowAll(true)}
-              className="group flex items-center gap-3 rounded-full border border-[#3A3027] bg-[#120F0D] px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-[#E8C86A] transition-all duration-300 hover:border-[#D4AF37]/60 hover:bg-[#18130F]"
-            >
-              <span>
-                View Full {activeCategoryName}
-              </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#080706]/50 via-transparent to-transparent" />
 
-              <ChevronDown className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-y-0.5" />
-            </button>
+                  {/* Category content */}
+                  <div className="absolute inset-x-0 bottom-0 p-7 sm:p-10 lg:p-12">
+                    <div className="flex items-end justify-between gap-6">
+                      <div>
+                        <div className="mb-4 flex items-center gap-3">
+                          <span className="h-px w-10 bg-[#D4AF37]" />
 
-          </motion.div>
-        )}
+                          <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#D4AF37]">
+                            Feel Café
+                          </span>
+                        </div>
 
-        {/* Show Less */}
-        {showAll && filteredItems.length > 6 && !searchQuery && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-10 flex justify-center"
-          >
+                        <h2 className="font-serif text-4xl font-medium tracking-[-0.025em] text-[#F4EDE4] sm:text-5xl lg:text-6xl">
+                          {activeCategory === "all"
+                            ? "Our Menu"
+                            : activeCategoryData?.name}
+                        </h2>
 
-            <button
-              type="button"
-              onClick={() => {
-                setShowAll(false);
+                        <p className="mt-3 text-sm text-white/50">
+                          {filteredItems.length}{" "}
+                          {filteredItems.length === 1
+                            ? "selection"
+                            : "selections"}
+                        </p>
+                      </div>
 
-                window.setTimeout(() => {
-                  document
-                    .getElementById("menu")
-                    ?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    });
-                }, 50);
-              }}
-              className="rounded-full border border-[#2B231D] px-5 py-2.5 text-[10px] uppercase tracking-[0.18em] text-[#9E938A] transition-all hover:border-[#D4AF37]/40 hover:text-[#E8C86A]"
-            >
-              Show Less
-            </button>
+                      <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2.5 backdrop-blur-md sm:flex">
+                        <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
 
-          </motion.div>
-        )}
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-white/50">
+                          Crafted with care
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mt-14 text-center"
-        >
-          <p className="text-[10px] uppercase tracking-[0.18em] text-[#70665F]">
-            Prices in PKR &bull; Tax applicable per local regulation
-          </p>
-        </motion.div>
+              {/* Menu list */}
+              <div className="mt-8">
+                {filteredItems.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
+                    {filteredItems.map((item, index) => (
+                      <MenuItemCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] px-6 py-16 text-center">
+                    <Search className="mx-auto h-7 w-7 text-white/20" />
 
+                    <h3 className="mt-5 font-serif text-2xl text-[#F4EDE4]">
+                      No selections found
+                    </h3>
+
+                    <p className="mt-2 text-sm text-white/35">
+                      Try another search or select a different
+                      category.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="mt-6 text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] transition-colors hover:text-[#F4EDE4]"
+                    >
+                      Clear Search
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom detail */}
+        <div className="mt-16 flex items-center justify-center gap-4">
+          <span className="h-px w-12 bg-white/10" />
+
+          <span className="text-[9px] uppercase tracking-[0.3em] text-white/20">
+            Feel Café · Pure & Simple
+          </span>
+
+          <span className="h-px w-12 bg-white/10" />
+        </div>
       </div>
     </section>
   );
